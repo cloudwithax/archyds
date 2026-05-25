@@ -16,6 +16,9 @@ analysis/mnt_rootfs/
 touchfix/*.img
 touchfix/*.bin
 
+# Claude runtime
+.claude/
+
 # Editor / OS noise
 *.swp
 *.swo
