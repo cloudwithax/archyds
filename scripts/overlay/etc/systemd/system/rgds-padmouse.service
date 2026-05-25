@@ -1,0 +1,15 @@
+[Unit]
+Description=RG DS gamepad-to-pointer remapper
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/rgds-padmouse.py
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

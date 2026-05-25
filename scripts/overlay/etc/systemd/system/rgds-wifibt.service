@@ -1,0 +1,14 @@
+[Unit]
+Description=RG DS Vendor WiFi/Bluetooth Init
+After=local-fs.target
+Before=network-pre.target bluetooth.service
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/rgds-wifibt-init.sh start
+ExecStop=/usr/local/sbin/rgds-wifibt-init.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

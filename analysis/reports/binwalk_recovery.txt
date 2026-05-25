@@ -1,0 +1,32 @@
+
+                                                                         /home/clxud/rgds-stock-mod/analysis/parts/recovery.img
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DECIMAL                            HEXADECIMAL                        DESCRIPTION
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0                                  0x0                                Device tree blob (DTB), version: 17, CPU ID: 0, total size: 2048 bytes
+2048                               0x800                              Device tree blob (DTB), version: 17, CPU ID: 0, total size: 187658 bytes
+189952                             0x2E600                            Linux kernel ARM64 boot image, little endian, effective image size: 39845888 bytes
+445824                             0x6CD80                            SHA256 hash constants, little endian
+20768432                           0x13CE6B0                          Linux version 6.1.141 (rk@flower-B85M-D2V) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.3-2021.07 
+                                                                      (arm-10.29)) 10.3.1 20210621, GNU ld (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 2.36.1.20210621) # 
+                                                                      SMP, has symbol table: false
+20805120                           0x13D7600                          ELF binary, 64-bit shared object, ARM 64-bit for System-V (Unix), little endian
+20810800                           0x13D8C30                          SHA256 hash constants, little endian
+20829328                           0x13DD490                          gzip compressed data, operating system: Unix, timestamp: 1970-01-01 00:00:00, total size: 45554 bytes
+21309792                           0x1452960                          SHA256 hash constants, little endian
+21328640                           0x1457300                          CRC32 polynomial table, little endian
+24113496                           0x16FF158                          Linux version 6.1.141 (rk@flower-B85M-D2V) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.3-2021.07 
+                                                                      (arm-10.29)) 10.3.1 20210621, GNU ld (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 2.36.1.20210621) #2 
+                                                                      SMP Thu May 14 07:48:13 UTC 2026, has symbol table: false
+26666295                           0x196E537                          Copyright text: "Copyright (C) 2024 Realtek NIC software team <nicfae@realtek.com> This program comes with ABSOLUTE"
+27067727                           0x19D054F                          Copyright text: "Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it> "
+27148113                           0x19E3F51                          Copyright text: "Copyright(c) Pierre Ossman "
+30178564                           0x1CC7D04                          CPIO ASCII archive, file count: 3
+35810368                           0x2226C40                          AES S-Box
+35810624                           0x2226D40                          AES S-Box
+38028728                           0x24445B8                          AES S-Box
+39323648                           0x2580800                          gzip compressed data, operating system: Unix, timestamp: 1970-01-01 00:00:00, total size: 5632543 bytes
+44958720                           0x2AE0400                          Device tree blob (DTB), version: 17, CPU ID: 0, total size: 187658 bytes
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Analyzed 1 file for 85 file signatures (187 magic patterns) in 563.0 milliseconds

@@ -1,0 +1,43 @@
+
+7-Zip 26.01 (x64) : Copyright (c) 1999-2026 Igor Pavlov : 2026-04-27
+ 64-bit locale=C.UTF-8 Threads:12 OPEN_MAX:1048576, ASM
+
+Scanning the drive for archives:
+1 file, 5368709120 bytes (5120 MiB)
+
+Extracting archive: parts/rootfs.img
+
+WARNINGS:
+There are data after the end of archive
+
+--
+Path = parts/rootfs.img
+Type = Ext
+WARNINGS:
+There are data after the end of archive
+Physical Size = 1076887552
+Tail Size = 4291821568
+Cluster Size = 4096
+Free Space = 132218880
+Modified = 2026-05-14 09:35:52
+Created = 2026-05-14 09:35:35
+Last Check Time = 2026-05-14 09:35:52
+Host OS = Linux
+Revision = 1
+inode Size = 256
+Code Page = UTF-8
+Label = rootfs
+ID = 9d1a776ce61a44f0baf18159be3e9ca1
+Characteristics = HAS_JOURNAL EXT_ATTR RESIZE_INODE DIR_INDEX 0x1000
+Incompatible Features = FILETYPE EXTENTS FLEX_BG BG_USE_META_CSUM
+Readonly-compatible Features = SPARSE_SUPER LARGE_FILE HUGE_FILE DIR_NLINK EXTRA_ISIZE METADATA_CSUM
+Written KiB = 886485
+
+
+Sub items Errors: 387
+
+Archives with Errors: 1
+
+Warnings: 1
+
+Sub items Errors: 387

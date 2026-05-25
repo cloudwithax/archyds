@@ -1,0 +1,26 @@
+# Stock firmware / large vendor blobs
+RGDS-LINUX-V1.0-260513.img.gz
+mod_20260508.zip
+
+# Build output
+out/
+
+# Analysis artifacts (large extracted dumps; keep reports/ and dissection notes)
+analysis/rgds_sdcard_20260514.img
+analysis/gpt_entries.bin
+analysis/extracted/
+analysis/parts/
+analysis/mnt_rootfs/
+
+# Touchfix working images (keep DTS sources)
+touchfix/*.img
+touchfix/*.bin
+
+# Editor / OS noise
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,13 @@
+[Unit]
+Description=RG DS anbernic_misc sysfs group permissions
+DefaultDependencies=no
+After=sysinit.target
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c 'for i in $(seq 1 50); do [ -e /sys/class/anbernic_misc/work_led ] && break; sleep 0.2; done; for f in work_led lowpwr_led tpctrl brightness; do p=/sys/class/anbernic_misc/$f; [ -e "$p" ] && chgrp input "$p" && chmod g+w "$p"; done'
+
+[Install]
+WantedBy=multi-user.target

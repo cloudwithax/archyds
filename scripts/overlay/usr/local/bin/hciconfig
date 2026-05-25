@@ -1,0 +1,54 @@
+#!/bin/sh
+# Minimal hciconfig shim. Vendor wifibt-init.sh (Anbernic stock) calls:
+#   hciconfig                  -> wants "hciN" in output for bt_ready()
+#   hciconfig hciN down|up     -> toggles adapter
+# Modern bluez dropped hciconfig; this shim covers just those two usages
+# via /sys/class/bluetooth and btmgmt/rfkill.
+
+list_hci() {
+	found=0
+	for d in /sys/class/bluetooth/hci*; do
+		[ -e "$d" ] || continue
+		name=$(basename "$d")
+		bdaddr=$(cat "$d/address" 2>/dev/null || echo "00:00:00:00:00:00")
+		echo "$name:	Type: Primary  Bus: UART"
+		echo "	BD Address: $bdaddr  ACL MTU: 0:0  SCO MTU: 0:0"
+		found=1
+	done
+	return $((1 - found))
+}
+
+dev_action() {
+	dev="$1"
+	action="$2"
+	idx="${dev#hci}"
+	case "$action" in
+		up)
+			command -v btmgmt >/dev/null 2>&1 && \
+				btmgmt --index "$idx" power on >/dev/null 2>&1 || true
+			command -v rfkill >/dev/null 2>&1 && \
+				rfkill unblock bluetooth >/dev/null 2>&1 || true
+			;;
+		down)
+			command -v btmgmt >/dev/null 2>&1 && \
+				btmgmt --index "$idx" power off >/dev/null 2>&1 || true
+			command -v rfkill >/dev/null 2>&1 && \
+				rfkill block bluetooth >/dev/null 2>&1 || true
+			;;
+	esac
+}
+
+case "$1" in
+	""|-a)
+		list_hci
+		;;
+	hci*)
+		if [ -z "$2" ]; then
+			list_hci | grep -w "$1:" || exit 1
+		else
+			dev_action "$1" "$2"
+		fi
+		;;
+esac
+
+exit 0

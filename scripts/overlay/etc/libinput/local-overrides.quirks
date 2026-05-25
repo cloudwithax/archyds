@@ -1,0 +1,9 @@
+[RGDS gt9xx-0 Bottom DSI-2]
+MatchName=gt9xx-0
+MatchUdevType=touchscreen
+AttrOutputMatch=DSI-2
+
+[RGDS gt9xx-1 Top DSI-1]
+MatchName=gt9xx-1
+MatchUdevType=touchscreen
+AttrOutputMatch=DSI-1

@@ -1,0 +1,17 @@
+[Unit]
+Description=RG DS Arch Plasma First-Boot Bootstrap
+Wants=rgds-wifibt.service network-online.target
+After=rgds-wifibt.service
+ConditionPathExists=!/var/lib/rgds-firstboot.done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/rgds-firstboot.sh
+TimeoutStartSec=infinity
+StandardOutput=journal+console
+StandardError=journal+console
+TTYPath=/dev/tty1
+TTYReset=yes
+
+[Install]
+WantedBy=multi-user.target

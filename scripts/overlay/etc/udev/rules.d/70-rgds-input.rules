@@ -1,0 +1,21 @@
+# RG DS input device classification
+
+# Main touch IC - bottom panel (DSI-2)
+ACTION=="add|change", SUBSYSTEM=="input", ATTRS{name}=="gt9xx-0", \
+  ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1", ENV{WL_OUTPUT}="DSI-2"
+
+# Secondary touch IC - top panel (DSI-1), powered via /sys/class/anbernic_misc/tpctrl
+ACTION=="add|change", SUBSYSTEM=="input", ATTRS{name}=="gt9xx-1", \
+  ENV{ID_INPUT}="1", ENV{ID_INPUT_TOUCHSCREEN}="1", ENV{WL_OUTPUT}="DSI-1"
+
+# Permissions
+ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", \
+  ATTRS{name}=="gt9xx-0", MODE="0664", GROUP="input"
+ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", \
+  ATTRS{name}=="gt9xx-1", MODE="0664", GROUP="input"
+ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", \
+  ATTRS{name}=="ANBERNIC-rk3568-keys", MODE="0664", GROUP="input"
+
+# Gamepad classification
+ACTION=="add|change", SUBSYSTEM=="input", ATTRS{name}=="ANBERNIC-rk3568-keys", \
+  ENV{ID_INPUT}="1", ENV{ID_INPUT_JOYSTICK}="1"

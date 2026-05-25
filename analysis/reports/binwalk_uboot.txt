@@ -1,0 +1,24 @@
+
+                                                                           /home/clxud/rgds-stock-mod/analysis/parts/uboot.img
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DECIMAL                            HEXADECIMAL                        DESCRIPTION
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0                                  0x0                                Device tree blob (DTB), version: 17, CPU ID: 0, total size: 3584 bytes
+4608                               0x1200                             gzip compressed data, original file name: "u-boot-nodtb.bin", operating system: Unix, timestamp: 2026-05-14 13:31:53, total size: 
+                                                                      606495 bytes
+611328                             0x95400                            gzip compressed data, original file name: "bl31_0x00040000.bin", operating system: Unix, timestamp: 2026-05-14 13:31:56, total 
+                                                                      size: 57773 bytes
+755712                             0xB8800                            gzip compressed data, original file name: "tee.bin", operating system: Unix, timestamp: 2026-05-14 13:31:56, total size: 232281 
+                                                                      bytes
+988160                             0xF1400                            Device tree blob (DTB), version: 17, CPU ID: 0, total size: 13595 bytes
+2097152                            0x200000                           Device tree blob (DTB), version: 17, CPU ID: 0, total size: 3584 bytes
+2101760                            0x201200                           gzip compressed data, original file name: "u-boot-nodtb.bin", operating system: Unix, timestamp: 2026-05-14 13:31:53, total size: 
+                                                                      606495 bytes
+2708480                            0x295400                           gzip compressed data, original file name: "bl31_0x00040000.bin", operating system: Unix, timestamp: 2026-05-14 13:31:56, total 
+                                                                      size: 57773 bytes
+2852864                            0x2B8800                           gzip compressed data, original file name: "tee.bin", operating system: Unix, timestamp: 2026-05-14 13:31:56, total size: 232281 
+                                                                      bytes
+3085312                            0x2F1400                           Device tree blob (DTB), version: 17, CPU ID: 0, total size: 13595 bytes
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Analyzed 1 file for 85 file signatures (187 magic patterns) in 23.0 milliseconds

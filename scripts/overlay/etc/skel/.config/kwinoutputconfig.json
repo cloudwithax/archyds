@@ -1,0 +1,56 @@
+[
+  {
+    "data": [
+      {
+        "autoRotation": "InTabletMode",
+        "brightness": 0.78,
+        "colorPowerTradeoff": "PreferEfficiency",
+        "colorProfileSource": "sRGB",
+        "connectorName": "DSI-1",
+        "edrPolicy": "always",
+        "highDynamicRange": false,
+        "iccProfilePath": "",
+        "overscan": 0,
+        "rgbRange": "automatic",
+        "scale": 1,
+        "sdrBrightness": 0.78,
+        "sdrGamutWideness": 0,
+        "writableSize": { "width": 640, "height": 480 }
+      },
+      {
+        "autoRotation": "InTabletMode",
+        "brightness": 0.78,
+        "colorPowerTradeoff": "PreferEfficiency",
+        "colorProfileSource": "sRGB",
+        "connectorName": "DSI-2",
+        "edrPolicy": "always",
+        "highDynamicRange": false,
+        "iccProfilePath": "",
+        "overscan": 0,
+        "rgbRange": "automatic",
+        "scale": 1,
+        "sdrBrightness": 0.78,
+        "sdrGamutWideness": 0,
+        "writableSize": { "width": 640, "height": 480 }
+      }
+    ]
+  },
+  {
+    "data": [
+      {
+        "enabled": true,
+        "outputIndex": 0,
+        "position": { "x": 0, "y": 0 },
+        "priority": 2,
+        "replicationSource": ""
+      },
+      {
+        "enabled": true,
+        "outputIndex": 1,
+        "position": { "x": 0, "y": 480 },
+        "priority": 1,
+        "replicationSource": ""
+      }
+    ]
+  }
+]

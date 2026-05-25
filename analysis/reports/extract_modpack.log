@@ -1,0 +1,19 @@
+
+7-Zip 26.01 (x64) : Copyright (c) 1999-2026 Igor Pavlov : 2026-04-27
+ 64-bit locale=C.UTF-8 Threads:12 OPEN_MAX:1048576, ASM
+
+Scanning the drive for archives:
+1 file, 127181512 bytes (122 MiB)
+
+Extracting archive: mod_20260508.zip
+--
+Path = mod_20260508.zip
+Type = zip
+Physical Size = 127181512
+
+Everything is Ok
+
+Folders: 2
+Files: 6
+Size:       127860929
+Compressed: 127181512

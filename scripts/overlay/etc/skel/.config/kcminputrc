@@ -1,0 +1,4 @@
+[Libinput][1046][48879][gt9xx-0]
+Calibration=1 0 0 0 1 0
+Enabled=true
+OutputName=DSI-2

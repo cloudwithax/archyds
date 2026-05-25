@@ -1,0 +1,19 @@
+
+7-Zip 26.01 (x64) : Copyright (c) 1999-2026 Igor Pavlov : 2026-04-27
+ 64-bit locale=C.UTF-8 Threads:12 OPEN_MAX:1048576, ASM
+
+Scanning the drive for archives:
+1 file, 6565617 bytes (6412 KiB)
+
+Extracting archive: extracted/modpack/mod_20260508/data/mnt.dep
+--
+Path = extracted/modpack/mod_20260508/data/mnt.dep
+Type = zip
+Physical Size = 6565617
+
+Everything is Ok
+
+Folders: 4
+Files: 13
+Size:       15290427
+Compressed: 6565617
