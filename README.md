@@ -25,18 +25,24 @@
 
 ---
 
+## What this is
+
+A real Linux desktop on the RG DS without touching the stock boot chain. The vendor U-Boot, kernel, and DTB are particular about this hardware (the panels and touch IC especially), so this build leaves all of that alone and only rewrites the rootfs partition. Arch Linux ARM goes on top, KDE Plasma runs against the stock kernel, and a first-boot script does the unattended setup.
+
+Not a polished distro. A mod pipeline that produces a bootable SD card.
+
 ## Features
 
-- **Stock boot chain preserved** — only the `rootfs` partition is replaced; U-Boot, kernel, and DTB stay untouched
-- **Full Arch Linux ARM aarch64** userland with pacman
-- **KDE Plasma 6.7** desktop with Wayland (forced via SDDM config — RK3568 has no X.org driver)
-- **Optional Plasma 6.7 beta modules** built from KDE unstable tarballs on first boot
-- **Optional `plasma-bigscreen`** + `union` for a TV-style frontend
-- **Dual-screen aware** — DSI-2 (bottom) is primary, DSI-1 (top) is secondary, stacked vertically
-- **Touch on bottom screen** via Goodix gt9xx-0, bound to DSI-2 with libinput quirks
-- **Padmouse service** — control the desktop with the gamepad / analog stick
-- **Stock WiFi & Bluetooth** — Realtek RTL8821CS modules + helper scripts ported from vendor firmware
-- **First-boot bootstrap** — package install, autologin, services, and beta builds run unattended on first power-on
+- Stock boot chain is untouched. Only `rootfs` gets rewritten.
+- Full Arch Linux ARM aarch64 userland, pacman included.
+- KDE Plasma 6.7 on Wayland. SDDM is forced to Wayland because the RK3568 has no X.org driver.
+- Optional Plasma 6.7 beta modules built from KDE unstable tarballs at first boot.
+- Optional `plasma-bigscreen` + `union` for a TV-style frontend.
+- Dual-screen aware. DSI-2 (bottom) is the primary display, DSI-1 (top) sits above it.
+- Touch works on the bottom screen via Goodix `gt9xx-0`, bound to DSI-2 through a libinput quirk.
+- Padmouse service so the analog stick can drive the cursor when touch is awkward.
+- Stock WiFi and Bluetooth via the Realtek RTL8821CS modules and the vendor helper scripts.
+- First boot runs `rgds-firstboot.service` and handles package install, autologin, services, and beta builds with no babysitting.
 
 ## Hardware
 
@@ -50,7 +56,7 @@
 | Boot media | microSD |
 | Stock OS | Anbernic vendor Linux 6.1.141 |
 
-## Partition Layout
+## Partition layout
 
 The stock boot chain is preserved. `rootfs` is rewritten and grown to absorb the unused vendor partitions:
 
@@ -67,17 +73,16 @@ The stock boot chain is preserved. `rootfs` is rewritten and grown to absorb the
 | ~~9~~ | ~~oem~~ | — | absorbed |
 | ~~10~~ | ~~userdata~~ | — | absorbed |
 
-Partitions 7–10 hold the stock Anbernic frontend and ROM/save assets, which aren't used under Arch. Pass `--grow-rootfs 0` if you want to keep them intact for a dual-boot setup.
+Partitions 7–10 hold the stock Anbernic frontend and the ROM/save assets. Nothing in Arch uses them, so by default they get absorbed into rootfs. To dual-boot with the stock OS, pass `--grow-rootfs 0` and they stay in place.
 
 ## Building
 
 ### Prerequisites
 
-- A Linux host with root (for loop-mounting and chroot)
-- `qemu-user-static` with `binfmt_misc` registered (for aarch64 chroot from x86_64)
-- `arch-install-scripts`, `parted`, `dosfstools`, `e2fsprogs`
-- A copy of the stock RG DS firmware image: `rgds_sdcard_20260514.img`
-  (Extract from `RGDS-LINUX-V1.0-260513.img.gz` shipped by Anbernic.)
+- A Linux host with root, for loop-mounting and chroot.
+- `qemu-user-static` with `binfmt_misc` registered, so the build can chroot into aarch64 from x86_64.
+- `arch-install-scripts`, `parted`, `dosfstools`, `e2fsprogs`.
+- A copy of the stock RG DS firmware: `rgds_sdcard_20260514.img`. Extract it from the `RGDS-LINUX-V1.0-260513.img.gz` archive Anbernic ships.
 
 ### Build the image
 
@@ -90,7 +95,7 @@ sudo ./scripts/build-rgds-arch-plasma67-image.sh \
   --enable-union 1
 ```
 
-Build output lands at `./out/rgds-arch-plasma67.img`.
+The image lands at `./out/rgds-arch-plasma67.img`.
 
 ## Flashing
 
@@ -99,19 +104,17 @@ sudo dd if=./out/rgds-arch-plasma67.img of=/dev/sdX bs=4M conv=fsync status=prog
 sync
 ```
 
-Replace `/dev/sdX` with your SD card device (**not** a partition like `/dev/sdX1`).
+`/dev/sdX` is the whole card, not a partition. Don't pass `/dev/sdX1`.
 
-If you need to restore just the stock boot partition (e.g. after experimentation):
+To restore just the stock boot partition (after experimentation):
 
 ```bash
 sudo dd if=touchfix/boot_orig.img of=/dev/sdX3 bs=1M conv=fsync status=progress
 ```
 
-## First Boot
+## First boot
 
-The first power-on runs `rgds-firstboot.service`. It can take a long time, especially if you enabled the Plasma beta source builds.
-
-Watch the progress over SSH or serial:
+First power-on runs `rgds-firstboot.service`. It takes a while, especially with the Plasma beta builds turned on. Watch it over SSH or serial:
 
 ```bash
 journalctl -u rgds-firstboot -f
@@ -119,26 +122,26 @@ journalctl -u rgds-firstboot -f
 tail -f /var/log/rgds-firstboot.log
 ```
 
-When the marker file `/var/lib/rgds-firstboot.done` appears, the bootstrap is finished and the system reboots into the autologged-in Plasma session.
+When `/var/lib/rgds-firstboot.done` exists, the bootstrap is done and the system reboots into an autologged-in Plasma session.
 
-Default user: **`alarm`** (passwordless sudo, in all system groups).
+Default user is `alarm`, passwordless sudo, in every system group it needs.
 
 ## Configuration
 
-Edit `/etc/rgds-plasma-bootstrap.conf` on the SD card's rootfs before first boot to tweak behavior:
+Edit `/etc/rgds-plasma-bootstrap.conf` on the rootfs before first boot to change behavior:
 
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `RGDS_ENABLE_KDE_BETA` | `1` | Build Plasma 6.7 beta modules from source |
-| `RGDS_ENABLE_BIGSCREEN` | `1` | Build & install `plasma-bigscreen` |
-| `RGDS_ENABLE_UNION` | `1` | Build & install `union` |
+| `RGDS_ENABLE_BIGSCREEN` | `1` | Build and install `plasma-bigscreen` |
+| `RGDS_ENABLE_UNION` | `1` | Build and install `union` |
 | `RGDS_PLASMA_BETA_VERSION` | `6.6.90` | KDE unstable tag to fetch |
 | `RGDS_REBOOT_AFTER_BOOTSTRAP` | `1` | Reboot once bootstrap completes |
 | `RGDS_AUTOLOGIN_USER` | `alarm` | SDDM autologin user |
 
-If the beta build fails (upstream ABI drift), set `RGDS_ENABLE_KDE_BETA=0` and you'll still get a working stable Plasma 6.6.5 from Arch Linux ARM's repos.
+If a beta build fails (upstream module renames happen), set `RGDS_ENABLE_KDE_BETA=0`. The stable Plasma 6.6.5 from the Arch Linux ARM repos is still there and the system boots fine.
 
-## Repository Layout
+## Repository layout
 
 ```
 scripts/
@@ -157,22 +160,20 @@ touchfix/                                 DTS sources for boot partition (refere
 CLAUDE.md                                 Detailed dev notes & lessons learned
 ```
 
-## Reality Check
+## Caveats
 
-This is a practical mod pipeline, not a polished distro release. Things to expect:
-
-- First-boot beta builds depend on KDE unstable tarball availability and can break when upstream APIs drift.
-- The stock kernel is vendor-pinned at 6.1.141; you cannot trivially swap kernels without breaking the panel/touch/audio stack.
-- Power management is rudimentary — battery reporting works but suspend is not wired up.
-- No mainline upstreaming work is included here; this targets the existing vendor BSP.
+- The beta build pulls from KDE unstable tarballs. When upstream renames or removes a module mid-release, the build will fail and the stable fallback is what you get.
+- The kernel is vendor-pinned at 6.1.141. The panel, touch, and audio drivers are out-of-tree against that exact version, so swapping kernels is not a small project.
+- Battery reporting works. Suspend is not wired up — the panels' standby behavior is fragile enough that a clean shutdown is the safer default.
+- No mainlining work is included. This targets the vendor BSP as-is.
 
 ## Credits
 
-- [Arch Linux ARM](https://archlinuxarm.org/) — base userland
-- [KDE](https://kde.org/) — Plasma 6.7 desktop
-- Anbernic — for shipping a hackable handheld with an unsigned bootloader
-- [plasma-bigscreen](https://invent.kde.org/plasma/plasma-bigscreen) — TV-style Plasma shell
+- [Arch Linux ARM](https://archlinuxarm.org/) for the base userland.
+- [KDE](https://kde.org/) for Plasma 6.7.
+- Anbernic for shipping a handheld with an unsigned bootloader.
+- [plasma-bigscreen](https://invent.kde.org/plasma/plasma-bigscreen) for the TV-style shell.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
