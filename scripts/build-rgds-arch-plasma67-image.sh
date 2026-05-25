@@ -15,7 +15,7 @@ Options:
   --arch-rootfs-url URL       Arch ARM aarch64 rootfs tarball
   --rootfs-start-sector N     Rootfs start sector override (default: from analysis/partition_map.tsv)
   --rootfs-size-sectors N     Rootfs size in sectors override (default: from analysis/partition_map.tsv)
-  --grow-rootfs 0|1           Grow rootfs over the stock ports partition (default: 0)
+  --grow-rootfs 0|1           Absorb ports/vendor/oem/userdata into rootfs (default: 1, ~11.5 GiB)
   --hostname NAME             Hostname for the image (default: rgds-arch)
   --root-pass PASS            Root password in image (default: root)
   --alarm-pass PASS           alarm user password in image (default: alarm)
@@ -52,7 +52,7 @@ OUTPUT_IMG="${REPO_DIR}/out/rgds-arch-plasma67.img"
 ARCH_ROOTFS_URL="http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz"
 ROOTFS_START_SECTOR=""
 ROOTFS_SIZE_SECTORS=""
-GROW_ROOTFS="0"
+GROW_ROOTFS="1"
 HOSTNAME="rgds-arch"
 ROOT_PASS="root"
 ALARM_PASS="alarm"
@@ -174,8 +174,8 @@ sgdisk -e "$OUTPUT_IMG" >/dev/null
 # variable. Always restore rootfs PARTUUID because the stock kernel cmdline uses
 # root=PARTUUID=614e0000-0000.
 if [[ "$GROW_ROOTFS" == "1" ]]; then
-  echo "[1c/8] GPT: extend rootfs over ports + restore stock PARTUUID"
-  ROOTFS_NEW_END=15171583  # sector before vendor partition
+  echo "[1c/8] GPT: absorb ports/vendor/oem/userdata into rootfs (~11.5 GiB)"
+  ROOTFS_NEW_END=24608767  # end-LBA of stock userdata partition
   ROOTFS_START_SECTOR="${ROOTFS_START_SECTOR:-491520}"
   ROOTFS_SIZE_SECTORS="$((ROOTFS_NEW_END - ROOTFS_START_SECTOR + 1))"
 
@@ -187,10 +187,10 @@ with open(stock, 'rb') as f:
     f.seek(1664 + 16); stock_partuuid = f.read(16)
 print(f"  Stock rootfs PARTUUID bytes: {stock_partuuid.hex()}")
 with open(out, 'r+b') as f:
-    # Extend rootfs end-LBA
+    # Extend rootfs end-LBA to absorb partitions 7-10
     f.seek(1664 + 40); f.write(struct.pack('<Q', new_end))
-    # Zero the overlapping 'ports' entry (entry 6, byte 1792, 128 bytes)
-    f.seek(1792); f.write(b'\x00' * 128)
+    # Zero entries 6..9 (ports, vendor, oem, userdata) - bytes 1792..2303
+    f.seek(1792); f.write(b'\x00' * (128 * 4))
     # Restore stock rootfs PARTUUID (defensive against tool-induced drift)
     f.seek(1664 + 16); f.write(stock_partuuid)
     # Recompute entries CRC32 (LBA 2..33 = 128 entries * 128 bytes)

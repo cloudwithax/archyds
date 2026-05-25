@@ -52,7 +52,7 @@
 
 ## Partition Layout
 
-The stock SD layout is preserved. Only `rootfs` is rewritten:
+The stock boot chain is preserved. `rootfs` is rewritten and grown to absorb the unused vendor partitions:
 
 | # | Name | Size | Modified |
 |---|------|-----:|:--------:|
@@ -61,11 +61,13 @@ The stock SD layout is preserved. Only `rootfs` is rewritten:
 | 3 | boot | 64 MiB | — |
 | 4 | recovery | 128 MiB | — |
 | 5 | backup | 32 MiB | — |
-| 6 | **rootfs** | **5 GiB** | **✓** |
-| 7 | ports | 2 GiB | — |
-| 8 | vendor | 512 MiB | — |
-| 9 | oem | 3 GiB | — |
-| 10 | userdata | 1 GiB | — |
+| 6 | **rootfs** | **~11.5 GiB** | **✓ grown** |
+| ~~7~~ | ~~ports~~ | — | absorbed |
+| ~~8~~ | ~~vendor~~ | — | absorbed |
+| ~~9~~ | ~~oem~~ | — | absorbed |
+| ~~10~~ | ~~userdata~~ | — | absorbed |
+
+Partitions 7–10 hold the stock Anbernic frontend and ROM/save assets, which aren't used under Arch. Pass `--grow-rootfs 0` if you want to keep them intact for a dual-boot setup.
 
 ## Building
 
