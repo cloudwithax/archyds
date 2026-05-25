@@ -247,6 +247,13 @@ chmod +x \
   "$MNT_DIR/usr/local/sbin/rgds-firstboot.sh" \
   "$MNT_DIR/usr/local/sbin/rgds-wifibt-init.sh"
 
+# The 'alarm' user already exists in the ALARM tarball (uid 1000), so /etc/skel
+# is never consulted for its home. Anything the overlay drops into /home/alarm
+# must be re-owned to alarm:alarm here.
+if [[ -d "$MNT_DIR/home/alarm" ]]; then
+  chown -R 1000:1000 "$MNT_DIR/home/alarm"
+fi
+
 mkdir -p "$MNT_DIR/etc/systemd/system/multi-user.target.wants"
 mkdir -p "$MNT_DIR/etc/systemd/system/sysinit.target.wants"
 ln -sf /etc/systemd/system/rgds-firstboot.service \
