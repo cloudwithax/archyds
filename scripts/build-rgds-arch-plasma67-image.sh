@@ -364,6 +364,10 @@ if [[ "$SKIP_PACKAGE_INSTALL" != "1" ]]; then
   arch-chroot "$MNT_DIR" /usr/bin/bash -c "$PROVIDER_ANS | $PACMD -S --needed \
     bluez bluez-utils && $CLEAN_CACHE" || true
 
+  echo "  -> Installing on-screen keyboard (plasma-keyboard)..."
+  arch-chroot "$MNT_DIR" /usr/bin/bash -c "$PROVIDER_ANS | $PACMD -S --needed \
+    plasma-keyboard && $CLEAN_CACHE" || true
+
   echo "  -> Installing utilities (if space permits)..."
   arch-chroot "$MNT_DIR" /usr/bin/bash -c "$PROVIDER_ANS | $PACMD -S --needed \
     dolphin konsole kde-cli-tools && $CLEAN_CACHE" 2>/dev/null || true

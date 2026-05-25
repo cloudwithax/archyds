@@ -243,7 +243,8 @@ main() {
     networkmanager wpa_supplicant \
     plasma-nm plasma-pa \
     bluez bluez-utils \
-    dolphin konsole kde-cli-tools || {
+    dolphin konsole kde-cli-tools \
+    plasma-keyboard || {
     warn "Some display packages could not be installed"
     warn "System will still boot but may not reach graphical target"
   }
