@@ -27,8 +27,9 @@ Options:
   --wifi-ssid SSID            Pre-configure WiFi SSID for first boot
   --wifi-psk PSK              Pre-configure WiFi PSK for first boot
   --skip-package-install      Skip QEMU-based package pre-installation (firstboot will handle it)
-  --safe-firstboot 0|1        Boot first to multi-user + autologin tty1, disable Plasma firstboot (default: 1).
-                              Run /root/rgds-enable-graphical.sh on device to switch to graphical + Plasma firstboot.
+  --safe-firstboot 0|1        Set 1 to boot first to multi-user + autologin tty1 and defer Plasma firstboot
+                              for debugging (default: 0 -> boot straight to graphical + Plasma firstboot).
+                              In safe mode, run /root/rgds-enable-graphical.sh on device to switch over.
   --help                      Show this help
 EOF
 }
@@ -64,7 +65,7 @@ REBOOT_AFTER_BOOTSTRAP="1"
 WIFI_SSID=""
 WIFI_PSK=""
 SKIP_PACKAGE_INSTALL="0"
-SAFE_FIRSTBOOT="1"
+SAFE_FIRSTBOOT="0"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
