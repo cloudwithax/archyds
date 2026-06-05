@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Flip between Game Mode (ES-DE) and the Plasma desktop and bounce the session so
+# SDDM (Relogin=true) immediately logs back into the newly selected one.
+#
+# Usage: rgds-session-switch <gamemode|desktop>
+set -u
+
+target="${1:-desktop}"
+
+# 1) Point SDDM's autologin at the requested session (needs root).
+if command -v sudo >/dev/null 2>&1; then
+  sudo -n /usr/local/bin/rgds-set-session "$target" || /usr/local/bin/rgds-set-session "$target"
+else
+  /usr/local/bin/rgds-set-session "$target"
+fi
+
+# 2) End the current session. SDDM then auto-logs into the new one.
+sid="${XDG_SESSION_ID:-}"
+if [ -z "$sid" ] && command -v loginctl >/dev/null 2>&1; then
+  sid="$(loginctl show-user "$USER" -p Sessions --value 2>/dev/null | awk '{print $1}')"
+fi
+
+if [ -n "$sid" ] && command -v loginctl >/dev/null 2>&1; then
+  loginctl terminate-session "$sid" 2>/dev/null && exit 0
+fi
+
+# Fallbacks if we could not resolve/terminate the logind session cleanly.
+if command -v qdbus >/dev/null 2>&1; then
+  qdbus org.kde.Shutdown /Shutdown org.kde.Shutdown.logout 2>/dev/null && exit 0
+fi
+pkill -TERM -x es-de 2>/dev/null || true
+pkill -TERM -x emulationstation 2>/dev/null || true
+pkill -TERM -x kwin_wayland 2>/dev/null || true
+loginctl terminate-user "$USER" 2>/dev/null || true

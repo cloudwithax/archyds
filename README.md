@@ -1,7 +1,7 @@
 <h1 align="center">archyds</h1>
 
 <p align="center">
-  <b>Arch Linux ARM + KDE Plasma 6.7 for the Anbernic RG DS dual-screen handheld</b>
+  <b>Arch Linux ARM + KDE Plasma 6.7 + an ES-DE game console for the Anbernic RG DS dual-screen handheld</b>
 </p>
 
 <p align="center">
@@ -16,6 +16,7 @@
 
 <p align="center">
   <a href="#features">Features</a> •
+  <a href="#game-mode-es-de">Game Mode</a> •
   <a href="#hardware">Hardware</a> •
   <a href="#building">Building</a> •
   <a href="#flashing">Flashing</a> •
@@ -29,12 +30,16 @@
 
 A real Linux desktop on the RG DS without touching the stock boot chain. The vendor U-Boot, kernel, and DTB are particular about this hardware (the panels and touch IC especially), so this build leaves all of that alone and only rewrites the rootfs partition. Arch Linux ARM goes on top, KDE Plasma runs against the stock kernel, and a first-boot script does the unattended setup.
 
+Out of the box it boots straight into **Game Mode** — an ES-DE (EmulationStation) console frontend over RetroArch — and the full KDE Plasma desktop is one menu entry away. Think Steam Deck's Game Mode / Desktop Mode split, on a dual-screen Anbernic.
+
 Not a polished distro. A mod pipeline that produces a bootable SD card.
 
 ## Features
 
 - Stock boot chain is untouched. Only `rootfs` gets rewritten.
 - Full Arch Linux ARM aarch64 userland, pacman included.
+- **Boots into Game Mode** — ES-DE + RetroArch — with a "Switch to Desktop" toggle to KDE and back.
+- Bundled free games (Freedoom, Dinothawr, 2048, Mr.Boom, uCity, Libbet) plus aarch64 libretro cores, so it's playable on the first boot with no extra downloads.
 - KDE Plasma 6.7 on Wayland. SDDM is forced to Wayland because the RK3568 has no X.org driver.
 - Optional Plasma 6.7 beta modules built from KDE unstable tarballs at first boot.
 - Optional `plasma-bigscreen` + `union` for a TV-style frontend.
@@ -43,6 +48,35 @@ Not a polished distro. A mod pipeline that produces a bootable SD card.
 - Padmouse service so the analog stick can drive the cursor when touch is awkward.
 - Stock WiFi and Bluetooth via the Realtek RTL8821CS modules and the vendor helper scripts.
 - First boot runs `rgds-firstboot.service` and handles package install, autologin, services, and beta builds with no babysitting.
+
+## Game Mode (ES-DE)
+
+By default SDDM auto-logs into **Game Mode**: ES-DE (the EmulationStation Desktop Edition frontend) running over RetroArch. There's no Plasma shell here — just a console-style game launcher on the panel.
+
+**How it's wired.** Game Mode is a Wayland session (`/usr/share/wayland-sessions/rgds-gamemode.desktop`) that runs `kwin_wayland` as a bare kiosk compositor whose only client is ES-DE. KWin is reused on purpose: it's the *only* compositor proven to drive the RG DS's two DSI panels (it needs a specific set of `KWIN_DRM_*` quirks), so Game Mode rides the exact same display path the desktop does — no second, unproven compositor. KWin is started with `--exit-with-session`, so when ES-DE quits, the session ends and SDDM logs back in. ES-DE's own renderer gets a Mesa/panfrost GL context via `MESA_GL_VERSION_OVERRIDE`.
+
+**Game Mode ⇄ Desktop, Steam-Deck style.**
+
+- In ES-DE, open the **Desktop & Tools** system and pick **Switch to Desktop**. You land in KDE Plasma.
+- In Plasma, launch **Game Mode (ES-DE)** (Applications → Games, also on the desktop) to go back.
+
+Both directions just flip which session SDDM auto-logs into (`rgds-set-session`, allowed passwordless for the one helper) and bounce the session; `Relogin=true` lands you in the new one. To make the desktop the boot default instead, build with `--default-session desktop` (or run `sudo rgds-set-session desktop` on the device).
+
+**What's included.**
+
+| System | Core | Content |
+|--------|------|---------|
+| DOOM | PrBoom | **Freedoom** Phase 1 & 2 (BSD-licensed) |
+| Game Boy | Gambatte | **Libbet and the Magic Floor** (free homebrew) |
+| Game Boy Color | Gambatte | **uCity** (GPLv3 city-builder) |
+| Dinothawr | Dinothawr | **Dinothawr** (libretro's own free game) |
+| 2048 | libretro 2048 | self-contained |
+| Mr.Boom | Mr.Boom | self-contained (Bomberman-like) |
+| NES / SNES / Genesis / GBA | fceumm / snes9x / genesis_plus_gx / mGBA | *drop your own ROMs in `~/ROMs/<system>`* |
+
+Cores are aarch64 nightlies from the libretro buildbot, in `/usr/lib/libretro`. ROMs live in `~/ROMs`; ES-DE config in `~/ES-DE`. Add more systems/ROMs and they show up automatically (ES-DE hides empty systems).
+
+**BIOS / firmware.** Console BIOS images (PlayStation, Saturn, Sega CD, Neo Geo…) are copyrighted and *not* freely redistributable, so **none are shipped**. The bundled games are deliberately chosen to need zero BIOS. RetroArch's system directory is set up at `~/RetroArch/BIOS` with a `README-BIOS.txt` listing the exact filenames + MD5s — dump your own from hardware you own and drop them in. (The PS1 core also has a built-in HLE BIOS for many games.) The only file pre-placed there is `prboom.wad`, which is free GPL DOOM-engine data, not a console BIOS.
 
 ## Hardware
 
@@ -97,6 +131,17 @@ sudo ./scripts/build-rgds-arch-plasma67-image.sh \
 
 The image lands at `./out/rgds-arch-plasma67.img`.
 
+Game Mode is bundled and set as the boot default automatically. Relevant knobs:
+
+```bash
+  --install-gamemode 1        # bundle ES-DE + RetroArch (default 1)
+  --default-session gamemode  # or 'desktop' to boot to KDE instead
+  --fetch-retro-assets 1      # download aarch64 cores + free games at build time (default 1)
+  --esde-appimage-url URL     # pin a specific ES-DE aarch64 AppImage
+```
+
+The cores and games are downloaded at build time (best-effort — a failed download just warns and skips), so they aren't committed to the repo. ES-DE itself is the official aarch64 AppImage, extracted into `/opt/ES-DE`.
+
 ## Flashing
 
 ```bash
@@ -122,7 +167,7 @@ journalctl -u rgds-firstboot -f
 tail -f /var/log/rgds-firstboot.log
 ```
 
-When `/var/lib/rgds-firstboot.done` exists, the bootstrap is done and the system reboots into an autologged-in Plasma session.
+When `/var/lib/rgds-firstboot.done` exists, the bootstrap is done and the system reboots into an autologged-in **Game Mode** (ES-DE) session. From there, **Desktop & Tools → Switch to Desktop** drops you to KDE; the Plasma **Game Mode (ES-DE)** launcher brings you back. Build with `--default-session desktop` if you'd rather boot to KDE.
 
 Default user is `alarm`, passwordless sudo, in every system group it needs.
 
@@ -138,6 +183,7 @@ Edit `/etc/rgds-plasma-bootstrap.conf` on the rootfs before first boot to change
 | `RGDS_PLASMA_BETA_VERSION` | `6.6.90` | KDE unstable tag to fetch |
 | `RGDS_REBOOT_AFTER_BOOTSTRAP` | `1` | Reboot once bootstrap completes |
 | `RGDS_AUTOLOGIN_USER` | `alarm` | SDDM autologin user |
+| `RGDS_DEFAULT_SESSION` | `gamemode` | Session SDDM auto-logs into: `gamemode` or `desktop` |
 
 If a beta build fails (upstream module renames happen), set `RGDS_ENABLE_KDE_BETA=0`. The stable Plasma 6.6.5 from the Arch Linux ARM repos is still there and the system boots fine.
 
@@ -147,11 +193,16 @@ If a beta build fails (upstream module renames happen), set `RGDS_ENABLE_KDE_BET
 scripts/
 ├── build-rgds-arch-plasma67-image.sh    Image builder (host-side)
 └── overlay/                              Files dropped into rootfs
-    ├── etc/sddm.conf.d/                  SDDM (forced Wayland)
+    ├── etc/sddm.conf.d/                  SDDM (forced Wayland) + session default
+    ├── etc/sudoers.d/                    Passwordless session-switch helper
     ├── etc/libinput/                     Touch → DSI-2 binding quirks
     ├── etc/skel/.config/                 Default KWin / Plasma config
     ├── etc/systemd/system/               First-boot, padmouse, wifi/bt services
-    └── usr/local/sbin/                   Bootstrap & helper scripts
+    ├── usr/share/wayland-sessions/       Game Mode (ES-DE-in-KWin) session
+    ├── usr/share/applications/           Plasma "Game Mode" launcher
+    ├── usr/local/bin/                    Game Mode session + Game/Desktop toggle
+    ├── usr/local/sbin/                   Bootstrap & helper scripts
+    └── home/alarm/                       ES-DE config, ROMs, RetroArch + BIOS dir
 analysis/
 ├── RGDS_DISSECTION.md                    Stock firmware analysis notes
 ├── partition_map.tsv                     GPT layout

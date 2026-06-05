@@ -1,0 +1,2 @@
+RG DS launcher stub. ES-DE shows this entry under "2048"; selecting it starts
+the libretro 2048 core (no ROM data required). The file contents are ignored.

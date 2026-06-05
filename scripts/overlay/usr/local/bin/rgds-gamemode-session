@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# RG DS "Game Mode" session: run KWin as a bare kiosk compositor whose only
+# client is ES-DE. This deliberately reuses KWin (not the Plasma shell) because
+# KWin is the only Wayland compositor proven to drive the RG DS's two finicky
+# DSI panels - the same KWIN_DRM_* quirks the Plasma session relies on are
+# re-exported here so game mode gets an identical, known-good display path.
+#
+# KWin is started with --exit-with-session so that when ES-DE quits (e.g. the
+# user picks "Switch to Desktop"), KWin tears down and the SDDM session ends.
+# With Relogin=true in the SDDM autologin drop-in, SDDM then logs straight back
+# into whichever session rgds-set-session last selected.
+set -u
+
+export XDG_CURRENT_DESKTOP=KDE
+export XDG_SESSION_DESKTOP=rgds-gamemode
+
+# RG DS panel/DRM quirks (mirror of /etc/xdg/plasma-workspace/env/99-rgds-kwin.sh).
+export KWIN_DRM_NO_AMS=1
+export KWIN_FORCE_SW_CURSOR=1
+export KWIN_DRM_USE_MODIFIERS=0
+export KWIN_DRM_DISABLE_TRIPLE_BUFFERING=1
+
+exec kwin_wayland --no-lockscreen --exit-with-session=/usr/local/bin/rgds-es-launch

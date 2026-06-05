@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<!--
+  RG DS custom systems. These override/extend ES-DE's bundled definitions so the
+  launch command points at the exact RetroArch core shipped on the image
+  (/usr/lib/libretro), with no dependency on ES-DE's emulator auto-detection.
+
+  Systems with no bundled free content (nes/snes/genesis/gba) are still defined
+  so dropping your own ROMs into ~/ROMs/<system> Just Works with the installed
+  core. ES-DE hides systems whose ROM folder is empty.
+-->
+<systemList>
+
+  <system>
+    <name>doom</name>
+    <fullname>DOOM (Freedoom / PrBoom)</fullname>
+    <path>%ROMPATH%/doom</path>
+    <extension>.wad .WAD .iwad .IWAD .pwad .PWAD .lmp .LMP</extension>
+    <command label="PrBoom">/usr/bin/retroarch -L /usr/lib/libretro/prboom_libretro.so %ROM%</command>
+    <platform>doom</platform>
+    <theme>doom</theme>
+  </system>
+
+  <system>
+    <name>gb</name>
+    <fullname>Nintendo Game Boy</fullname>
+    <path>%ROMPATH%/gb</path>
+    <extension>.gb .GB .dmg .DMG .zip .ZIP .7z .7Z</extension>
+    <command label="Gambatte">/usr/bin/retroarch -L /usr/lib/libretro/gambatte_libretro.so %ROM%</command>
+    <platform>gb</platform>
+    <theme>gb</theme>
+  </system>
+
+  <system>
+    <name>gbc</name>
+    <fullname>Nintendo Game Boy Color</fullname>
+    <path>%ROMPATH%/gbc</path>
+    <extension>.gbc .GBC .gb .GB .zip .ZIP .7z .7Z</extension>
+    <command label="Gambatte">/usr/bin/retroarch -L /usr/lib/libretro/gambatte_libretro.so %ROM%</command>
+    <platform>gbc</platform>
+    <theme>gbc</theme>
+  </system>
+
+  <system>
+    <name>gba</name>
+    <fullname>Nintendo Game Boy Advance</fullname>
+    <path>%ROMPATH%/gba</path>
+    <extension>.gba .GBA .zip .ZIP .7z .7Z</extension>
+    <command label="mGBA">/usr/bin/retroarch -L /usr/lib/libretro/mgba_libretro.so %ROM%</command>
+    <platform>gba</platform>
+    <theme>gba</theme>
+  </system>
+
+  <system>
+    <name>nes</name>
+    <fullname>Nintendo Entertainment System</fullname>
+    <path>%ROMPATH%/nes</path>
+    <extension>.nes .NES .unf .UNF .unif .UNIF .zip .ZIP .7z .7Z</extension>
+    <command label="FCEUmm">/usr/bin/retroarch -L /usr/lib/libretro/fceumm_libretro.so %ROM%</command>
+    <platform>nes</platform>
+    <theme>nes</theme>
+  </system>
+
+  <system>
+    <name>snes</name>
+    <fullname>Super Nintendo Entertainment System</fullname>
+    <path>%ROMPATH%/snes</path>
+    <extension>.sfc .SFC .smc .SMC .zip .ZIP .7z .7Z</extension>
+    <command label="Snes9x">/usr/bin/retroarch -L /usr/lib/libretro/snes9x_libretro.so %ROM%</command>
+    <platform>snes</platform>
+    <theme>snes</theme>
+  </system>
+
+  <system>
+    <name>genesis</name>
+    <fullname>Sega Genesis / Mega Drive</fullname>
+    <path>%ROMPATH%/genesis</path>
+    <extension>.md .MD .gen .GEN .bin .BIN .smd .SMD .sg .SG .68k .zip .ZIP .7z .7Z</extension>
+    <command label="Genesis Plus GX">/usr/bin/retroarch -L /usr/lib/libretro/genesis_plus_gx_libretro.so %ROM%</command>
+    <platform>genesis</platform>
+    <theme>genesis</theme>
+  </system>
+
+  <system>
+    <name>dinothawr</name>
+    <fullname>Dinothawr</fullname>
+    <path>%ROMPATH%/dinothawr</path>
+    <extension>.game .GAME</extension>
+    <command label="Dinothawr">/usr/bin/retroarch -L /usr/lib/libretro/dinothawr_libretro.so %ROM%</command>
+    <platform>dinothawr</platform>
+    <theme>dinothawr</theme>
+  </system>
+
+  <system>
+    <name>2048</name>
+    <fullname>2048</fullname>
+    <path>%ROMPATH%/2048</path>
+    <extension>.2048</extension>
+    <command label="libretro 2048">/usr/bin/retroarch -L /usr/lib/libretro/2048_libretro.so</command>
+    <platform>2048</platform>
+    <theme>2048</theme>
+  </system>
+
+  <system>
+    <name>mrboom</name>
+    <fullname>Mr.Boom</fullname>
+    <path>%ROMPATH%/mrboom</path>
+    <extension>.boom</extension>
+    <command label="Mr.Boom">/usr/bin/retroarch -L /usr/lib/libretro/mrboom_libretro.so</command>
+    <platform>mrboom</platform>
+    <theme>mrboom</theme>
+  </system>
+
+  <system>
+    <name>desktop</name>
+    <fullname>Desktop &amp; Tools</fullname>
+    <path>%ROMPATH%/desktop</path>
+    <extension>.sh .SH .desktop .DESKTOP</extension>
+    <command label="Run">bash %ROM%</command>
+    <platform>desktop</platform>
+    <theme>desktop</theme>
+  </system>
+
+</systemList>

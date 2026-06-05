@@ -58,6 +58,7 @@ fi
 : "${RGDS_PLASMA_BETA_VERSION:=6.6.90}"
 : "${RGDS_REBOOT_AFTER_BOOTSTRAP:=1}"
 : "${RGDS_AUTOLOGIN_USER:=alarm}"
+: "${RGDS_DEFAULT_SESSION:=gamemode}"
 : "${RGDS_BETA_MODULES:=libplasma kwin plasma-workspace plasma-desktop union plasma-bigscreen}"
 
 export MAKEFLAGS="${MAKEFLAGS:--j$(nproc)}"
@@ -124,7 +125,9 @@ ensure_packages() {
 
 configure_autologin() {
   local session="plasma.desktop"
-  if [[ "$RGDS_ENABLE_BIGSCREEN" == "1" ]] && [[ -f /usr/share/wayland-sessions/plasma-bigscreen-wayland.desktop ]]; then
+  if [[ "$RGDS_DEFAULT_SESSION" == "gamemode" ]] && [[ -f /usr/share/wayland-sessions/rgds-gamemode.desktop ]]; then
+    session="rgds-gamemode.desktop"
+  elif [[ "$RGDS_ENABLE_BIGSCREEN" == "1" ]] && [[ -f /usr/share/wayland-sessions/plasma-bigscreen-wayland.desktop ]]; then
     session="plasma-bigscreen-wayland.desktop"
   elif [[ -f /usr/share/wayland-sessions/plasma.desktop ]]; then
     session="plasma.desktop"
@@ -133,13 +136,17 @@ configure_autologin() {
   fi
 
   mkdir -p /etc/sddm.conf.d
-  cat > /etc/sddm.conf.d/rgds-autologin.conf <<EOF
+  # zz- sorts last so it wins over the shipped rgds-autologin.conf, and matches
+  # what /usr/local/bin/rgds-set-session writes for the Game Mode/desktop toggle.
+  # Relogin=true lets the toggle bounce the session and land in the new one.
+  cat > /etc/sddm.conf.d/zz-rgds-session.conf <<EOF
 [General]
 DisplayServer=wayland
 
 [Autologin]
 User=${RGDS_AUTOLOGIN_USER}
 Session=${session}
+Relogin=true
 
 [Wayland]
 CompositorCommand=kwin_wayland --no-lockscreen

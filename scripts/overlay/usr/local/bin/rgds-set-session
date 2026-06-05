@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Select which session SDDM auto-logs into. Root-only; alarm is granted exactly
+# this command passwordless via /etc/sudoers.d/20-rgds-session so the
+# unprivileged game-mode/desktop toggles can flip it.
+#
+# Usage: rgds-set-session <gamemode|desktop>
+set -euo pipefail
+
+case "${1:-}" in
+  gamemode|game|es-de|esde) session="rgds-gamemode.desktop" ;;
+  desktop|plasma|kde)       session="plasma.desktop" ;;
+  *) echo "usage: rgds-set-session <gamemode|desktop>" >&2; exit 2 ;;
+esac
+
+# Prefer the KDE bigscreen session for desktop if it is the configured default.
+if [ "$session" = "plasma.desktop" ] && [ -f /usr/share/wayland-sessions/plasma-bigscreen-wayland.desktop ] && [ -f /etc/rgds-plasma-bootstrap.conf ]; then
+  if grep -q 'RGDS_ENABLE_BIGSCREEN="1"' /etc/rgds-plasma-bootstrap.conf 2>/dev/null; then
+    : # keep plasma.desktop for the desktop toggle; bigscreen is opt-in via SDDM directly
+  fi
+fi
+
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/zz-rgds-session.conf <<EOF
+# Managed by rgds-set-session - do not edit by hand.
+[General]
+DisplayServer=wayland
+
+[Autologin]
+User=alarm
+Session=${session}
+Relogin=true
+
+[Wayland]
+CompositorCommand=kwin_wayland --no-lockscreen
+EOF
+
+echo "rgds-set-session: SDDM autologin session set to ${session}"

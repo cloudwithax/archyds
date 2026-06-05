@@ -30,6 +30,10 @@ Options:
   --safe-firstboot 0|1        Set 1 to boot first to multi-user + autologin tty1 and defer Plasma firstboot
                               for debugging (default: 0 -> boot straight to graphical + Plasma firstboot).
                               In safe mode, run /root/rgds-enable-graphical.sh on device to switch over.
+  --install-gamemode 0|1      Bundle ES-DE + RetroArch "Game Mode" and make it the boot default (default: 1)
+  --default-session NAME      Which session SDDM auto-logs into: gamemode | desktop (default: gamemode)
+  --fetch-retro-assets 0|1    Download aarch64 libretro cores + free games at build time (default: 1)
+  --esde-appimage-url URL     Override the ES-DE aarch64 AppImage download URL
   --help                      Show this help
 EOF
 }
@@ -66,6 +70,10 @@ WIFI_SSID=""
 WIFI_PSK=""
 SKIP_PACKAGE_INSTALL="0"
 SAFE_FIRSTBOOT="0"
+INSTALL_GAMEMODE="1"
+DEFAULT_SESSION="gamemode"
+FETCH_RETRO_ASSETS="1"
+ESDE_APPIMAGE_URL="https://gitlab.com/es-de/emulationstation-de/-/package_files/288156935/download"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -88,6 +96,10 @@ while [[ $# -gt 0 ]]; do
     --wifi-psk) WIFI_PSK="$2"; shift 2 ;;
     --skip-package-install) SKIP_PACKAGE_INSTALL="1"; shift ;;
     --safe-firstboot) SAFE_FIRSTBOOT="$2"; shift 2 ;;
+    --install-gamemode) INSTALL_GAMEMODE="$2"; shift 2 ;;
+    --default-session) DEFAULT_SESSION="$2"; shift 2 ;;
+    --fetch-retro-assets) FETCH_RETRO_ASSETS="$2"; shift 2 ;;
+    --esde-appimage-url) ESDE_APPIMAGE_URL="$2"; shift 2 ;;
     --help|-h) usage; exit 0 ;;
     *) die "Unknown argument: $1" ;;
   esac
@@ -98,10 +110,16 @@ done
 [[ "$ENABLE_UNION" =~ ^[01]$ ]] || die "--enable-union must be 0 or 1"
 [[ "$REBOOT_AFTER_BOOTSTRAP" =~ ^[01]$ ]] || die "--reboot-after-bootstrap must be 0 or 1"
 [[ "$SAFE_FIRSTBOOT" =~ ^[01]$ ]] || die "--safe-firstboot must be 0 or 1"
+[[ "$INSTALL_GAMEMODE" =~ ^[01]$ ]] || die "--install-gamemode must be 0 or 1"
+[[ "$FETCH_RETRO_ASSETS" =~ ^[01]$ ]] || die "--fetch-retro-assets must be 0 or 1"
+[[ "$DEFAULT_SESSION" =~ ^(gamemode|desktop)$ ]] || die "--default-session must be gamemode or desktop"
 [[ "$GROW_ROOTFS" =~ ^[01]$ ]] || die "--grow-rootfs must be 0 or 1"
 [[ -z "$ROOTFS_START_SECTOR" || "$ROOTFS_START_SECTOR" =~ ^[0-9]+$ ]] || die "--rootfs-start-sector must be an integer"
 [[ -z "$ROOTFS_SIZE_SECTORS" || "$ROOTFS_SIZE_SECTORS" =~ ^[0-9]+$ ]] || die "--rootfs-size-sectors must be an integer"
 [[ $EUID -eq 0 ]] || die "Run as root (or via sudo)."
+
+# Game Mode off => boot the desktop, not a session whose binaries aren't installed.
+[[ "$INSTALL_GAMEMODE" == "0" ]] && DEFAULT_SESSION="desktop"
 
 for c in awk blkid bsdtar cp curl install losetup lsblk mkfs.ext4 mount openssl rsync sed sgdisk truncate umount uuidgen; do
   need_cmd "$c"
@@ -248,6 +266,16 @@ chmod +x \
   "$MNT_DIR/usr/local/sbin/rgds-firstboot.sh" \
   "$MNT_DIR/usr/local/sbin/rgds-wifibt-init.sh"
 
+# Game Mode plumbing: enforce modes here so a fresh git clone (which drops the
+# 0440 sudoers bit and only tracks the exec bit) still produces a valid image.
+for f in rgds-gamemode-session rgds-es-launch rgds-set-session rgds-session-switch; do
+  [[ -f "$MNT_DIR/usr/local/bin/$f" ]] && chmod 0755 "$MNT_DIR/usr/local/bin/$f"
+done
+[[ -f "$MNT_DIR/home/alarm/ROMs/desktop/Switch to Desktop.sh" ]] && \
+  chmod 0755 "$MNT_DIR/home/alarm/ROMs/desktop/Switch to Desktop.sh"
+[[ -f "$MNT_DIR/etc/sudoers.d/20-rgds-session" ]] && \
+  chmod 0440 "$MNT_DIR/etc/sudoers.d/20-rgds-session"
+
 # The 'alarm' user already exists in the ALARM tarball (uid 1000), so /etc/skel
 # is never consulted for its home. Anything the overlay drops into /home/alarm
 # must be re-owned to alarm:alarm here.
@@ -288,6 +316,7 @@ RGDS_ENABLE_UNION="${ENABLE_UNION}"
 RGDS_PLASMA_BETA_VERSION="${BETA_VERSION}"
 RGDS_REBOOT_AFTER_BOOTSTRAP="${REBOOT_AFTER_BOOTSTRAP}"
 RGDS_AUTOLOGIN_USER="alarm"
+RGDS_DEFAULT_SESSION="${DEFAULT_SESSION}"
 RGDS_BETA_MODULES="libplasma kwin plasma-workspace plasma-desktop union plasma-bigscreen"
 EOF
 
@@ -380,6 +409,12 @@ if [[ "$SKIP_PACKAGE_INSTALL" != "1" ]]; then
   arch-chroot "$MNT_DIR" /usr/bin/bash -c "$PROVIDER_ANS | $PACMD -S --needed \
     dolphin konsole kde-cli-tools && $CLEAN_CACHE" 2>/dev/null || true
 
+  if [[ "$INSTALL_GAMEMODE" == "1" ]]; then
+    echo "  -> Installing game console (RetroArch + libretro core info)..."
+    arch-chroot "$MNT_DIR" /usr/bin/bash -c "$PROVIDER_ANS | $PACMD -S --needed \
+      retroarch libretro-core-info && $CLEAN_CACHE" 2>/dev/null || true
+  fi
+
   echo "  -> Enabling services..."
   arch-chroot "$MNT_DIR" /usr/bin/bash -c '
     systemctl enable NetworkManager 2>/dev/null || true
@@ -421,6 +456,167 @@ if [[ -d "$STOCK_ROOTFS" ]]; then
   fi
 else
   echo "WARN: Stock rootfs extract not found ($STOCK_ROOTFS), skipping WiFi/BT compatibility import."
+fi
+
+# ---------------------------------------------------------------------------
+# Game Mode: ES-DE frontend + RetroArch cores + free games.
+# ES-DE runs inside KWin (the only compositor proven on these panels) as a
+# kiosk session; the overlay ships the session/toggle plumbing, this step adds
+# the (large, downloaded) binaries and content so they aren't committed to git.
+# ---------------------------------------------------------------------------
+if [[ "$INSTALL_GAMEMODE" == "1" ]]; then
+  echo "[7f/8] Installing ES-DE Game Mode + RetroArch content"
+
+  # Host-side tools to unpack the AppImage and core zips (no aarch64 execution).
+  for hc in unsquashfs unzip; do
+    command -v "$hc" >/dev/null 2>&1 || pacman -S --noconfirm --needed squashfs-tools unzip || true
+  done
+
+  GM_TMP="$WORK_DIR/gamemode"
+  mkdir -p "$GM_TMP" "$MNT_DIR/opt"
+
+  # --- ES-DE aarch64 AppImage, extracted without running the ARM runtime ------
+  echo "  -> Downloading ES-DE aarch64 AppImage"
+  if curl -L --retry 3 --retry-delay 2 -o "$GM_TMP/ES-DE.AppImage" "$ESDE_APPIMAGE_URL"; then
+    # A type-2 AppImage is an ELF runtime followed by an embedded squashfs. The
+    # payload begins right after the runtime's ELF section-header table, so
+    # compute that offset from the ELF header - the naive "first 'hsqs' match"
+    # can land on a byte sequence inside the runtime instead of the real
+    # superblock. This never executes the aarch64 binary on the x86_64 host.
+    offset="$(python3 - "$GM_TMP/ES-DE.AppImage" <<'PYO'
+import sys, struct
+try:
+    with open(sys.argv[1], 'rb') as fh:
+        h = fh.read(64)
+    if h[:4] != b'\x7fELF':
+        raise SystemExit
+    shoff = struct.unpack_from('<Q', h, 0x28)[0]
+    shentsize = struct.unpack_from('<H', h, 0x3a)[0]
+    shnum = struct.unpack_from('<H', h, 0x3c)[0]
+    off = shoff + shentsize * shnum
+    with open(sys.argv[1], 'rb') as fh:
+        fh.seek(off)
+        if fh.read(4) == b'hsqs':
+            print(off)
+except Exception:
+    pass
+PYO
+)"
+    # Fallback: the real superblock is the LAST 'hsqs' (after the runtime).
+    if [[ -z "$offset" ]]; then
+      offset="$(grep -aboF 'hsqs' "$GM_TMP/ES-DE.AppImage" 2>/dev/null | tail -n1 | cut -d: -f1 || true)"
+    fi
+    if [[ -n "$offset" ]] && command -v unsquashfs >/dev/null 2>&1; then
+      rm -rf "$MNT_DIR/opt/ES-DE"
+      if unsquashfs -o "$offset" -d "$MNT_DIR/opt/ES-DE" "$GM_TMP/ES-DE.AppImage" >/dev/null 2>&1; then
+        echo "     ES-DE extracted to /opt/ES-DE (squashfs offset $offset)"
+        [[ -e "$MNT_DIR/opt/ES-DE/AppRun" ]] && ln -sf /opt/ES-DE/AppRun "$MNT_DIR/usr/local/bin/es-de"
+      else
+        echo "     WARN: unsquashfs failed; ES-DE not installed"
+      fi
+    else
+      echo "     WARN: could not locate squashfs in AppImage (or unsquashfs missing); ES-DE not installed"
+    fi
+  else
+    echo "     WARN: ES-DE download failed; skipping ES-DE"
+  fi
+
+  if [[ "$FETCH_RETRO_ASSETS" == "1" ]]; then
+    # --- libretro cores (aarch64) ------------------------------------------
+    echo "  -> Downloading libretro aarch64 cores"
+    mkdir -p "$MNT_DIR/usr/lib/libretro"
+    CORE_BASE="https://buildbot.libretro.com/nightly/linux/aarch64/latest"
+    CORES=( 2048 mrboom prboom nxengine dinothawr fceumm snes9x genesis_plus_gx gambatte mgba )
+    for core in "${CORES[@]}"; do
+      z="$GM_TMP/${core}.so.zip"
+      if curl -fL --retry 2 --retry-delay 2 -o "$z" "$CORE_BASE/${core}_libretro.so.zip" 2>/dev/null \
+         && unzip -o -q "$z" -d "$MNT_DIR/usr/lib/libretro" 2>/dev/null; then
+        echo "     core: ${core}"
+      else
+        echo "     WARN: core unavailable: ${core}"
+      fi
+    done
+
+    # --- free, redistributable game content (best effort) ------------------
+    echo "  -> Fetching free game content"
+    ROMS="$MNT_DIR/home/alarm/ROMs"
+    BIOSDIR="$MNT_DIR/home/alarm/RetroArch/BIOS"
+    mkdir -p "$ROMS"/{doom,gb,gbc,gba,nes,snes,genesis,dinothawr} "$BIOSDIR"
+
+    # prboom.wad: GPL data the PrBoom core needs (NOT a console BIOS).
+    if curl -fL --retry 2 -o "$BIOSDIR/prboom.wad" \
+        "https://raw.githubusercontent.com/libretro/libretro-prboom/master/prboom.wad" 2>/dev/null; then
+      echo "     prboom.wad"
+    else
+      echo "     WARN: prboom.wad fetch failed (DOOM needs it)"
+    fi
+
+    # Freedoom (BSD-licensed, fully free) phase 1 & 2 WADs.
+    fd_url="$(curl -fsSL https://api.github.com/repos/freedoom/freedoom/releases/latest 2>/dev/null \
+      | grep -oE 'https://[^"]*freedoom-[0-9.]+\.zip' | head -n1 || true)"
+    if [[ -n "$fd_url" ]] && curl -fL --retry 2 -o "$GM_TMP/freedoom.zip" "$fd_url" 2>/dev/null \
+       && unzip -o -j -q "$GM_TMP/freedoom.zip" '*/freedoom1.wad' '*/freedoom2.wad' -d "$ROMS/doom" 2>/dev/null; then
+      echo "     Freedoom 1 & 2 (DOOM)"
+    else
+      echo "     WARN: Freedoom fetch failed"
+    fi
+
+    # Dinothawr: libretro's own free game + data.
+    if curl -fL --retry 2 -o "$GM_TMP/dinothawr.tgz" \
+        "https://codeload.github.com/libretro/Dinothawr/tar.gz/refs/heads/master" 2>/dev/null; then
+      tar -xzf "$GM_TMP/dinothawr.tgz" -C "$GM_TMP" 2>/dev/null || true
+      if [[ -d "$GM_TMP/Dinothawr-master/dinothawr" ]]; then
+        cp -a "$GM_TMP/Dinothawr-master/dinothawr/." "$ROMS/dinothawr/" 2>/dev/null || true
+        echo "     Dinothawr"
+      else
+        echo "     WARN: Dinothawr archive layout unexpected"
+      fi
+    else
+      echo "     WARN: Dinothawr fetch failed"
+    fi
+
+    # Free homebrew carts. Use direct release-asset URLs (no GitHub API, so no
+    # rate limits) and keep each fetch best-effort.
+    fetch_game() { # <dest-file> <url> <label>
+      if curl -fL --retry 2 -o "$1" "$2" 2>/dev/null && [[ -s "$1" ]]; then
+        echo "     $3"
+      else
+        rm -f "$1"; echo "     WARN: fetch failed: $3"
+      fi
+    }
+    fetch_game "$ROMS/gbc/uCity.gbc" \
+      "https://github.com/AntonioND/ucity/releases/latest/download/ucity.gbc" \
+      "uCity (Game Boy Color)"
+    fetch_game "$ROMS/gb/Libbet and the Magic Floor.gb" \
+      "https://github.com/pinobatch/libbet/releases/latest/download/libbet.gb" \
+      "Libbet and the Magic Floor (Game Boy)"
+  fi
+
+  # Default session: overlay ships Game Mode as default; flip to Plasma if asked.
+  if [[ "$DEFAULT_SESSION" == "desktop" && -f "$MNT_DIR/etc/sddm.conf.d/zz-rgds-session.conf" ]]; then
+    sed -i 's/^Session=.*/Session=plasma.desktop/' "$MNT_DIR/etc/sddm.conf.d/zz-rgds-session.conf"
+    echo "  -> Default session set to Plasma desktop"
+  fi
+
+  # Re-own everything we dropped into alarm's home (uid 1000).
+  for d in ROMs ES-DE RetroArch .config/retroarch; do
+    [[ -e "$MNT_DIR/home/alarm/$d" ]] && chown -R 1000:1000 "$MNT_DIR/home/alarm/$d"
+  done
+
+  # Mirror the Plasma "Game Mode" launcher onto alarm's desktop for discoverability.
+  if [[ -f "$MNT_DIR/usr/share/applications/rgds-gamemode.desktop" ]]; then
+    install -d -o 1000 -g 1000 "$MNT_DIR/home/alarm/Desktop"
+    install -m 0755 -o 1000 -g 1000 "$MNT_DIR/usr/share/applications/rgds-gamemode.desktop" \
+      "$MNT_DIR/home/alarm/Desktop/rgds-gamemode.desktop"
+  fi
+else
+  echo "[7f/8] Game Mode install disabled (--install-gamemode 0); booting to desktop"
+  # The overlay ships Game Mode as the default session; with it uninstalled,
+  # fall back to Plasma and stop advertising the (now non-functional) session.
+  if [[ -f "$MNT_DIR/etc/sddm.conf.d/zz-rgds-session.conf" ]]; then
+    sed -i 's/^Session=.*/Session=plasma.desktop/' "$MNT_DIR/etc/sddm.conf.d/zz-rgds-session.conf"
+  fi
+  rm -f "$MNT_DIR/usr/share/wayland-sessions/rgds-gamemode.desktop"
 fi
 
 # ---------------------------------------------------------------------------
@@ -498,4 +694,12 @@ elif [[ "$SKIP_PACKAGE_INSTALL" == "1" ]]; then
   echo "First boot runs /usr/local/sbin/rgds-firstboot.sh (will install packages - needs network)."
 else
   echo "Packages pre-installed at build time. First boot should reach SDDM login quickly."
+fi
+if [[ "$INSTALL_GAMEMODE" == "1" ]]; then
+  if [[ "$DEFAULT_SESSION" == "gamemode" ]]; then
+    echo "Game Mode (ES-DE) is the default session. ES-DE -> 'Desktop & Tools' -> 'Switch to Desktop' drops to Plasma;"
+    echo "the Plasma 'Game Mode (ES-DE)' launcher switches back."
+  else
+    echo "Game Mode (ES-DE) installed but desktop is default. Use the Plasma 'Game Mode (ES-DE)' launcher to enter it."
+  fi
 fi

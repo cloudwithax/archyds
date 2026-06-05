@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=RG DS Game Mode (ES-DE)
+Comment=EmulationStation game console frontend
+Exec=/usr/local/bin/rgds-gamemode-session
+TryExec=/usr/local/bin/rgds-gamemode-session
+Type=Application
+DesktopNames=KDE

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Launch ES-DE as the KWin session command (see rgds-gamemode-session).
+# Runs in a loop so a crash drops back to ES-DE rather than a black KWin; the
+# only intended way out is the "Switch to Desktop" entry, which sets the SDDM
+# session to Plasma and then terminates the logind session from under us.
+set -u
+
+# Talk Wayland to KWin.
+export SDL_VIDEODRIVER=wayland
+export QT_QPA_PLATFORM=wayland
+
+# The official ES-DE aarch64 AppImage is built against desktop OpenGL, while the
+# RK3568's Mali-G52 exposes desktop GL 3.1 (panfrost) / GLES via Mesa. Nudge Mesa
+# to advertise a high enough version so ES-DE's renderer gets a usable context.
+# Harmless on drivers that already report >= these versions.
+export MESA_GL_VERSION_OVERRIDE="${MESA_GL_VERSION_OVERRIDE:-3.3}"
+export MESA_GLSL_VERSION_OVERRIDE="${MESA_GLSL_VERSION_OVERRIDE:-330}"
+export MESA_GLES_VERSION_OVERRIDE="${MESA_GLES_VERSION_OVERRIDE:-3.2}"
+
+# Resolve the ES-DE binary from the extracted AppImage.
+ESDE_BIN="/opt/ES-DE/AppRun"
+[ -x "$ESDE_BIN" ] || ESDE_BIN="/opt/ES-DE/usr/bin/es-de"
+[ -x "$ESDE_BIN" ] || ESDE_BIN="/opt/ES-DE/usr/bin/emulationstation"
+[ -x "$ESDE_BIN" ] || ESDE_BIN="$(command -v es-de || command -v emulationstation || true)"
+
+if [ -z "${ESDE_BIN:-}" ] || [ ! -x "$ESDE_BIN" ]; then
+  echo "rgds-es-launch: ES-DE binary not found under /opt/ES-DE" >&2
+  # Fall back to a terminal-ish hold so the panel isn't just black.
+  exec sleep infinity
+fi
+
+while true; do
+  "$ESDE_BIN" "$@"
+  rc=$?
+  # A clean ES-DE quit (rc 0) still loops back to game mode; the desktop switch
+  # path never returns here because the session is terminated out from under us.
+  sleep 1
+done

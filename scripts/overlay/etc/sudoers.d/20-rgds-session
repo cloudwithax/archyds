@@ -1,0 +1,3 @@
+# Allow the autologin user to flip the SDDM session between Game Mode and the
+# Plasma desktop without a password. Scoped to exactly the one helper.
+alarm ALL=(root) NOPASSWD: /usr/local/bin/rgds-set-session

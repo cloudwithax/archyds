@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Game Mode (ES-DE)
+GenericName=Game Console
+Comment=Leave the desktop and switch to the ES-DE game console frontend
+Exec=/usr/local/bin/rgds-session-switch gamemode
+Icon=applications-games
+Terminal=false
+Categories=Game;
+Keywords=emulation;retro;emulationstation;es-de;gamemode;
