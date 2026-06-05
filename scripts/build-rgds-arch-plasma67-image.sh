@@ -10,7 +10,7 @@ Usage:
 
 Options:
   --stock-img PATH            Stock unpacked .img (default: ./analysis/rgds_sdcard_20260514.img)
-  --stock-rootfs PATH         Extracted stock rootfs dir (default: ./analysis/extracted/rootfs)
+  --stock-rootfs PATH         Stock WiFi/BT blob tree for the compat import (default: ./analysis/wifibt-blobs)
   --output-img PATH           Output image path (default: ./out/rgds-arch-plasma67.img)
   --arch-rootfs-url URL       Arch ARM aarch64 rootfs tarball
   --rootfs-start-sector N     Rootfs start sector override (default: from analysis/partition_map.tsv)
@@ -47,7 +47,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 OVERLAY_DIR="$SCRIPT_DIR/overlay"
 
 STOCK_IMG="${REPO_DIR}/analysis/rgds_sdcard_20260514.img"
-STOCK_ROOTFS="${REPO_DIR}/analysis/extracted/rootfs"
+STOCK_ROOTFS="${REPO_DIR}/analysis/wifibt-blobs"
 OUTPUT_IMG="${REPO_DIR}/out/rgds-arch-plasma67.img"
 ARCH_ROOTFS_URL="http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz"
 ROOTFS_START_SECTOR=""
